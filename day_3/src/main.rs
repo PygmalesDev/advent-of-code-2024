@@ -18,7 +18,7 @@ fn get_text(
 }
 
 fn find_sum(
-    text: &mut String
+    text: &mut String,
 ) -> Result<i32> {
     let rx = Regex::new(r"mul\([0-9]{1,3},[0-9]{1,3}\)").unwrap();
     
@@ -32,10 +32,38 @@ fn find_sum(
     Ok(result)
 }
 
+fn find_sum_commanded(
+    text: &mut String,
+) -> Result<i32> {
+    let rx = Regex::new(r"mul\([0-9]{1,3},[0-9]{1,3}\)|do\(\)|don't\(\)")
+                .unwrap();
+
+    let commands = rx.find_iter(text)
+        .map(|exp| exp.as_str())
+        .collect::<Vec<&str>>();
+
+    let mut result = 0;
+    let mut do_mult = true;
+
+    for command in commands {
+        if command == "do()" { do_mult = true; }
+        else if command == "don't()" {do_mult = false; }
+        else if do_mult { 
+            result += &command[4..command.len()-1]
+                .split(',')
+                .map(|num| num.parse::<i32>().unwrap())
+                .reduce(|a, b| a*b).unwrap();
+        } 
+    }
+
+    Ok(result)
+}
+
 fn main() -> Result<()> {
     let mut text = get_text("data.txt")?;
-    let result = find_sum(&mut text)?;
-    println!("Programm sum: {result}");
+    let res = find_sum(&mut text)?;
+    let res_com = find_sum_commanded(&mut text)?;
+    println!("Programm sum: {res}\nProgram sum (commanded): {res_com}");
 
     Ok(())
 }
